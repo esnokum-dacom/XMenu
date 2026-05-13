@@ -12,7 +12,8 @@ static void download_cover(const char *url, const char *dest) {
 }
 
 static void get_art_url(char *buf, int bufsz) {
-  FILE *f = popen("playerctl -i chromium,firefox metadata mpris:artUrl", "r");
+  FILE *f =
+      popen("playerctl -i chromium,firefox,brave metadata mpris:artUrl", "r");
   if (!f) {
     buf[0] = '\0';
     return;
@@ -25,9 +26,10 @@ static void get_art_url(char *buf, int bufsz) {
 }
 
 void get_song(char *buf, int bufsz) {
-  FILE *f = popen("playerctl -i chromium,firefox metadata --format '{{artist}} "
-                  "- {{title}}'",
-                  "r");
+  FILE *f =
+      popen("playerctl -i chromium,firefox,brave metadata --format '{{artist}} "
+            "- {{title}}'",
+            "r");
   if (!f) {
     snprintf(buf, bufsz, "N/A");
     return;
@@ -43,7 +45,7 @@ void get_song(char *buf, int bufsz) {
 }
 
 void get_time(char *buf, int bufsz) {
-  FILE *f = popen("playerctl -i chromium,firefox metadata --format "
+  FILE *f = popen("playerctl -i chromium,firefox,brave metadata --format "
                   "'{{duration(position)}} - {{duration(mpris:length)}} '",
                   "r");
   if (!f) {
@@ -61,7 +63,7 @@ void get_time(char *buf, int bufsz) {
 }
 
 static int get_progress_pct(void) {
-  FILE *f = popen("playerctl -i chromium,firefox metadata --format "
+  FILE *f = popen("playerctl -i chromium,firefox,brave metadata --format "
                   "'{{position}} {{mpris:length}}'",
                   "r");
   if (!f)
@@ -109,7 +111,7 @@ void draw_cover(Display *dpy, Window win, int x, int y, int size,
 }
 
 static int is_playing(void) {
-  FILE *f = popen("playerctl -i chromium,firefox status", "r");
+  FILE *f = popen("playerctl -i chromium,firefox,brave status", "r");
   if (!f)
     return 0;
   char status[32];
@@ -122,7 +124,7 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
                  XftColor *title_color, unsigned long foreground,
                  unsigned long background, XftColor *value_color, int x, int y,
                  int w, int h, char *last_art_url, PlayerButtons *btns,
-                 Visual *visual, Colormap cmap, XftColor co) {
+                 Visual *visual, Colormap cmap) {
   char song[256], time_act[256], art_url[256];
   get_song(song, sizeof(song));
   get_time(time_act, sizeof(time_act));
@@ -147,9 +149,9 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   int text_x = x + 10 + cover_size + 10;
   XftDrawStringUtf8(xdraw, title_color, font, text_x, y + 20,
                     (FcChar8 *)"Listening", strlen("Listening"));
-  XftDrawStringUtf8(xdraw, value_color, font, text_x, y + 50, (FcChar8 *)song,
-                    strlen(song));
-  XftDrawStringUtf8(xdraw, value_color, font, text_x, y + 80,
+  XftDrawStringUtf8(xdraw, value_color, font, text_x + 70, y + 50,
+                    (FcChar8 *)song, strlen(song) - 4);
+  XftDrawStringUtf8(xdraw, value_color, font, text_x + 70, y + 80,
                     (FcChar8 *)time_act, strlen(time_act));
 
   int btn_x = text_x;

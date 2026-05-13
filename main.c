@@ -33,6 +33,13 @@ static void draw_card(Display *dpy, Window win, GC gc, XftDraw *xdraw,
                     (FcChar8 *)value, strlen(value));
 }
 
+static void draw_text(XftDraw *xdraw, XftFont *font, XftColor *title_color,
+                      int x, int y, const char *title) {
+
+  XftDrawStringUtf8(xdraw, title_color, font, x + 10, y + 20, (FcChar8 *)title,
+                    strlen(title));
+}
+
 int main(void) {
   Display *dpy = XOpenDisplay(NULL);
   if (!dpy) {
@@ -97,10 +104,13 @@ int main(void) {
   XftColorAllocName(dpy, visual, cmap, "#ffffff", &title_color);
   XftColorAllocName(dpy, visual, cmap, "#ffffff", &value_color);
 
-  XftColor t_color;
-
   char ram_text[64];
   char bat_cap[32];
+  char hour[64];
+  char date[64];
+  char user[32];
+  char t_title[16];
+  char t_body[16];
   char last_art_url[256] = {0};
   char song[32];
   PlayerButtons btns = {0};
@@ -108,6 +118,7 @@ int main(void) {
 
   int ram_pct;
   int batt_pct;
+  int task_pct;
 
   while (1) {
     while (XPending(dpy)) {
@@ -116,6 +127,13 @@ int main(void) {
         get_ram(ram_text, sizeof(ram_text), &ram_pct);
         get_battery(bat_cap, sizeof(bat_cap), &batt_pct);
         get_song(song, sizeof(song));
+        get_hour(hour, sizeof(hour), 0);
+        get_date(date, sizeof(date));
+        get_user(user, sizeof(user));
+
+        task("/home/onu/Documents/XMenu/test.txt", 1, 2, t_title,
+             sizeof(t_title), t_body, sizeof(t_body), &task_pct);
+
         XClearWindow(dpy, win);
       }
       if (ev.type == ButtonPress) {
@@ -135,17 +153,30 @@ int main(void) {
     }
     get_ram(ram_text, sizeof(ram_text), &ram_pct);
     get_battery(bat_cap, sizeof(bat_cap), &batt_pct);
+    get_song(song, sizeof(song));
+    get_hour(hour, sizeof(hour), 0);
+    get_date(date, sizeof(date));
+    get_user(user, sizeof(user));
+    task("/home/onu/Documents/XMenu/test.txt", 1, 2, t_title, sizeof(t_title),
+         t_body, sizeof(t_body), &task_pct);
 
     XClearWindow(dpy, win);
 
     draw_card(dpy, win, gc, xdraw, font, &title_color, background, foreground,
-              &value_color, 10, 10, win_w / 2.3, 70, "RAM", ram_text, ram_pct);
+              &value_color, 10, 50, win_w / 2.3, 70, "RAM", ram_text, ram_pct);
     draw_card(dpy, win, gc, xdraw, font, &title_color, background, foreground,
-              &value_color, win_w / 2.1, 10, win_w / 2, 70, "BATTERY", bat_cap,
+              &value_color, win_w / 2.1, 50, win_w / 2, 70, "BATTERY", bat_cap,
               batt_pct);
     draw_player(dpy, win, gc, xdraw, font, &title_color, background, foreground,
-                &value_color, 10, 90, win_w / 1.04, 200, last_art_url, &btns,
-                visual, cmap, t_color);
+                &value_color, 10, 130, win_w / 1.04, 120, last_art_url, &btns,
+                visual, cmap);
+    draw_card(dpy, win, gc, xdraw, font, &title_color, background, foreground,
+              &value_color, 10, 260, win_w / 2, 70, t_title, t_body, task_pct);
+    XSetForeground(dpy, gc, 0x000000);
+    XFillRectangle(dpy, win, gc, 10, 10, win_w - 20, 30);
+    draw_text(xdraw, font, &title_color, 10, 10, hour);
+    draw_text(xdraw, font, &title_color, (win_w / 2) - sizeof(date), 10, date);
+    draw_text(xdraw, font, &title_color, (win_w - 30) - sizeof(user), 10, user);
 
     XFlush(dpy);
     sleep(1);

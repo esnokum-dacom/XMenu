@@ -19,6 +19,6 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
                  XftColor *title_color, unsigned long foreground,
                  unsigned long background, XftColor *value_color, int x, int y,
                  int w, int h, char *last_art_url, PlayerButtons *btns,
-                 Visual *visual, Colormap cmap, XftColor co);
+                 Visual *visual, Colormap cmap);
 
 #endif
