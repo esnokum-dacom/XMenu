@@ -1,4 +1,5 @@
 #include "main.h"
+#include "draw.h"
 #include "info.h"
 #include "player.h"
 #include <X11/X.h>
@@ -6,41 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
-static void draw_card(Display *dpy, Window win, GC gc, XftDraw *xdraw,
-                      XftFont *font, XftColor *title_color,
-                      unsigned long background, unsigned long foreground,
-                      XftColor *value_color, int x, int y, int w, int h,
-                      const char *title, const char *value, int pct) {
-
-  XSetForeground(dpy, gc, background);
-  XFillRectangle(dpy, win, gc, x, y, w, h);
-
-  int bar_h = 6;
-  int bar_y = y + h - bar_h - 10;
-  int bar_x = x + 10;
-  int bar_w = w - 20;
-
-  XSetForeground(dpy, gc, 0x303030);
-  XFillRectangle(dpy, win, gc, bar_x, bar_y, bar_w, bar_h);
-
-  int fill_w = bar_w * pct / 100;
-  XSetForeground(dpy, gc, foreground);
-  XFillRectangle(dpy, win, gc, bar_x, bar_y, fill_w, bar_h);
-
-  XftDrawStringUtf8(xdraw, title_color, font, x + 10, y + 20, (FcChar8 *)title,
-                    strlen(title));
-
-  XftDrawStringUtf8(xdraw, value_color, font, x + 10, y + h - 25,
-                    (FcChar8 *)value, strlen(value));
-}
-
-static void draw_text(XftDraw *xdraw, XftFont *font, XftColor *title_color,
-                      int x, int y, const char *title) {
-
-  XftDrawStringUtf8(xdraw, title_color, font, x + 10, y + 20, (FcChar8 *)title,
-                    strlen(title));
-}
 
 int main(int argc, char *argv[]) {
   if (argc >= 2 && strcmp(argv[1], "--new-task") == 0) {
@@ -68,7 +34,168 @@ int main(int argc, char *argv[]) {
     printf("Task created.\n");
     return 0;
 
-  } else {
+  } else if (argc >= 2 && strcmp(argv[1], "--fetch") == 0) {
+    Display *dpy = XOpenDisplay(NULL);
+    if (!dpy) {
+      fprintf(stderr, "It could not be open the display\n");
+      return 1;
+    }
+
+    int screen = DefaultScreen(dpy);
+    Window root = DefaultRootWindow(dpy);
+    Visual *visual = DefaultVisual(dpy, screen);
+    Colormap cmap = DefaultColormap(dpy, screen);
+    XftFont *font = XftFontOpenName(dpy, screen, "monospace:size=12");
+
+    int mx = 0, my = 0, mw = DisplayWidth(dpy, screen),
+        mh = DisplayHeight(dpy, screen);
+    if (XineramaIsActive(dpy)) {
+      int n;
+      XineramaScreenInfo *info = XineramaQueryScreens(dpy, &n);
+      Window dummy_w;
+      int dummy_i;
+      unsigned int dummy_u;
+      int cx, cy;
+      XQueryPointer(dpy, root, &dummy_w, &dummy_w, &cx, &cy, &dummy_i, &dummy_i,
+                    &dummy_u);
+      for (int i = 0; i < n; i++) {
+        if (cx >= info[i].x_org && cx < info[i].x_org + info[i].width &&
+            cy >= info[i].y_org && cy < info[i].y_org + info[i].height) {
+          mx = info[i].x_org;
+          my = info[i].y_org;
+          mw = info[i].width;
+          mh = info[i].height;
+          break;
+        }
+      }
+      XFree(info);
+    }
+
+    XSetWindowAttributes attrs = {
+        .override_redirect = True,
+        .background_pixel = 0x151515,
+        .event_mask = ExposureMask | ButtonPressMask | PointerMotionMask |
+                      LeaveWindowMask,
+    };
+    int win_w = 550;
+    int win_h = 350;
+    int win_x = mx + (mw - win_w) / 2;
+    int win_y = my + (mh - win_h) / 2;
+
+    Window win = XCreateWindow(
+        dpy, root, win_x, win_y, win_w, win_h, 0, CopyFromParent, InputOutput,
+        CopyFromParent, CWOverrideRedirect | CWBackPixel | CWEventMask, &attrs);
+
+    XMapRaised(dpy, win);
+    XSetInputFocus(dpy, win, RevertToParent, CurrentTime);
+
+    GC gc = XCreateGC(dpy, win, 0, NULL);
+    XftDraw *xdraw = XftDrawCreate(dpy, win, visual, cmap);
+
+    XftColor title_color, value_color;
+    XftColorAllocName(dpy, visual, cmap, "#ffffff", &title_color);
+    XftColorAllocName(dpy, visual, cmap, "#ffffff", &value_color);
+
+    char ram_text[64];
+    char os_text[64];
+    char kernel_text[64];
+    char shell_text[64];
+    char user[32];
+    char hostname[32];
+    char host[64];
+    XEvent ev;
+
+    char distro[64];
+
+    char path[PATH_MAX];
+
+    int ram_pct;
+
+    while (1) {
+      while (XPending(dpy)) {
+        XNextEvent(dpy, &ev);
+        if (ev.type == Expose) {
+          get_user(user, sizeof(user));
+          get_ram(ram_text, sizeof(ram_text), &ram_pct);
+          get_os(os_text, sizeof(os_text));
+          get_kernel(kernel_text, sizeof(kernel_text));
+          get_shell(shell_text, sizeof(shell_text));
+          get_hostname(hostname, sizeof(hostname));
+          get_distro(distro, sizeof(distro));
+
+          XClearWindow(dpy, win);
+        }
+      }
+
+      if (ev.type == LeaveNotify) {
+        if (ev.xcrossing.mode == NotifyNormal &&
+            ev.xcrossing.detail != NotifyInferior)
+          break;
+      }
+      get_user(user, sizeof(user));
+      get_ram(ram_text, sizeof(ram_text), &ram_pct);
+      get_os(os_text, sizeof(os_text));
+      get_kernel(kernel_text, sizeof(kernel_text));
+      get_shell(shell_text, sizeof(shell_text));
+      get_hostname(hostname, sizeof(hostname));
+      get_distro(distro, sizeof(distro));
+
+      snprintf(host, sizeof(host), "%s@%s", user, hostname);
+
+      XClearWindow(dpy, win);
+
+      XSetForeground(dpy, gc, 0x000000);
+      XFillRectangle(dpy, win, gc, 10, 10, win_w - 20, win_h - 20);
+
+      if (strcmp(distro, "arch") == 0) {
+        snprintf(path, sizeof(path), "%s/.cache/XMenu/src/arch.png",
+                 get_home());
+      } else if (strcmp(distro, "gentoo") == 0) {
+        snprintf(path, sizeof(path), "%s/.cache/XMenu/src/gentoo.png",
+                 get_home());
+      } else if (strcmp(distro, "debian") == 0) {
+        snprintf(path, sizeof(path), "%s/.cache/XMenu/src/debian.png",
+                 get_home());
+      } else if (strcmp(distro, "ubuntu") == 0) {
+        snprintf(path, sizeof(path), "%s/.cache/XMenu/src/ubuntu.png",
+                 get_home());
+      } else {
+        snprintf(path, sizeof(path), "%s/.cache/XMenu/src/linux.png",
+                 get_home());
+      }
+
+      draw_cover(dpy, win, (win_w - 150) - 50, (win_h - 150) - 50, 150, path);
+
+      draw_text(xdraw, font, &title_color, 10, 10, host);
+
+      draw_text(xdraw, font, &title_color, 10, 28, "--------------");
+
+      draw_text(xdraw, font, &title_color, 10, 45, "Memory: ");
+      draw_text(xdraw, font, &title_color, 90, 45, ram_text);
+
+      draw_text(xdraw, font, &title_color, 10, 70, "OS: ");
+      draw_text(xdraw, font, &title_color, 90, 70, os_text);
+
+      draw_text(xdraw, font, &title_color, 10, 95, "kernel: ");
+      draw_text(xdraw, font, &title_color, 90, 95, kernel_text);
+
+      draw_text(xdraw, font, &title_color, 10, 120, "Shell: ");
+      draw_text(xdraw, font, &title_color, 90, 120, shell_text);
+
+      XFlush(dpy);
+      sleep(1);
+    }
+
+    XftColorFree(dpy, visual, cmap, &title_color);
+    XftColorFree(dpy, visual, cmap, &value_color);
+    XftDrawDestroy(xdraw);
+    XftFontClose(dpy, font);
+    XFreeGC(dpy, gc);
+    XCloseDisplay(dpy);
+    return 0;
+  }
+
+  else {
     Display *dpy = XOpenDisplay(NULL);
     if (!dpy) {
       fprintf(stderr, "It could not be open the display\n");

@@ -1,11 +1,15 @@
 #include "info.h"
 #include <Imlib2.h>
+#include <libgen.h>
+#include <limits.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+
+#define _GNU_SOURCE
 
 void get_battery(char *buf, int bufsz, int *pct) {
   int cap = -1;
@@ -144,4 +148,89 @@ void task(const char *path, int title, int body, char *buft, int bufszt,
 
   snprintf(buft, bufszt, "task: %s", lt);
   snprintf(bufb, bufszb, "%s", lb);
+}
+
+void get_os(char *buf, int bufsz) {
+  struct utsname system_info;
+  FILE *fp;
+  char line[256];
+  char os_name[128] = "Unknown";
+
+  fp = fopen("/etc/os-release", "r");
+  if (fp == NULL) {
+    printf("can't fetch the actual os\n");
+    return;
+  }
+
+  while (fgets(line, sizeof(line), fp)) {
+    if (strncmp(line, "NAME=", 5) == 0) {
+      sscanf(line + 5, "\"%[^\"]\"", os_name);
+    }
+  }
+  fclose(fp);
+  if (uname(&system_info) == 0)
+    snprintf(buf, bufsz, "%s %s", os_name, system_info.machine);
+}
+
+void get_kernel(char *buf, int bufsz) {
+  struct utsname kernelInfo;
+  struct utsname system_info;
+  if (uname(&kernelInfo) == -1) {
+    printf("Failed to retrieve kernel information.\n");
+    return;
+  }
+
+  if (uname(&system_info) == 0)
+    snprintf(buf, bufsz, "%s %s", system_info.sysname, kernelInfo.release);
+}
+
+void get_shell(char *buf, int bufsz) {
+  char path[256], comm[128];
+  pid_t parent_pid = getppid();
+
+  snprintf(path, sizeof(path), "/proc/%d/comm", parent_pid);
+  int fd = open(path, O_RDONLY);
+  if (fd == -1) {
+    perror("Failed to open comm file");
+    exit(1);
+  }
+
+  memset(comm, 0, sizeof(comm));
+  if (read(fd, comm, sizeof(comm) - 1) == -1) {
+    perror("Read failed");
+    exit(1);
+  }
+  close(fd);
+
+  snprintf(buf, bufsz, "%s", comm);
+}
+
+void get_hostname(char *buf, int bufsz) {
+  char host[256];
+  if (gethostname(host, sizeof(host)) == 0)
+    snprintf(buf, bufsz, "%s", host);
+}
+
+void get_distro(char *buf, int bufsz) {
+  FILE *f = fopen("/etc/os-release", "r");
+
+  if (!f)
+    return;
+
+  char line[256];
+
+  while (fgets(line, sizeof(line), f)) {
+    if (strncmp(line, "ID=", 3) == 0) {
+
+      char *id = line + 3;
+
+      id[strcspn(id, "\n")] = 0;
+
+      snprintf(buf, bufsz, "%s", id);
+
+      break;
+    }
+  }
+
+  fclose(f);
 }
