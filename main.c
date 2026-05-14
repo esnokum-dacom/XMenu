@@ -22,7 +22,6 @@ int main(int argc, char *argv[]) {
     snprintf(flp, sizeof(flp), "%s/task.txt", dir);
 
     FILE *fp = fopen(flp, "w");
-    printf("Error no task created");
     if (fp == NULL) {
       printf("Error creating file.\n");
       return 1;
