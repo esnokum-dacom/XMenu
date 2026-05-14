@@ -1,13 +1,35 @@
 #include "player.h"
-#include <Imlib2.h>
-#include <X11/Xft/Xft.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-static void download_cover(const char *url, const char *dest) {
+const char *get_home() {
+  const char *home = getenv("HOME");
+  if (home)
+    return home;
+  struct passwd *pw = getpwuid(getuid());
+  return pw ? pw->pw_dir : NULL;
+}
+
+void ndir(const char *path) {
+  char tmp[512];
+  strncpy(tmp, path, sizeof(tmp));
+
+  for (char *p = tmp + 1; *p; p++) {
+    if (*p == '/') {
+      *p = '\0';
+      mkdir(tmp, 0755);
+      *p = '/';
+    }
+  }
+  mkdir(tmp, 0755);
+}
+
+static void download_cover(const char *url) {
   char cmd[512];
-  snprintf(cmd, sizeof(cmd), "curl -s -o '%s' '%s'", dest, url);
+  char dir[512];
+  snprintf(dir, sizeof(dir), "%s/.cache/XMenu/covers", get_home());
+  ndir(dir);
+  snprintf(cmd, sizeof(cmd),
+           "curl -s -o '%s/.cache/XMenu/covers/cover.jpg' '%s'", get_home(),
+           url);
   system(cmd);
 }
 
@@ -86,7 +108,7 @@ void draw_cover(Display *dpy, Window win, int x, int y, int size,
 
   if (strncmp(art_url, "https://", 8) == 0 ||
       strncmp(art_url, "http://", 7) == 0) {
-    download_cover(art_url, "/tmp/cover.jpg");
+    download_cover(art_url);
     filepath = "/tmp/cover.jpg";
   } else if (strncmp(art_url, "file://", 7) == 0) {
     strncpy(tmp, art_url + 7, sizeof(tmp) - 1);
@@ -141,7 +163,7 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
 
     if (strncmp(art_url, "https://", 8) == 0 ||
         strncmp(art_url, "http://", 7) == 0)
-      download_cover(art_url, "/tmp/cover.jpg");
+      download_cover(art_url);
   }
 
   draw_cover(dpy, win, x + 10, y + 10, cover_size, art_url);

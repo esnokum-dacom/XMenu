@@ -1,12 +1,22 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <Imlib2.h>
 #include <X11/Xft/Xft.h>
 #include <X11/Xlib.h>
+#include <libgen.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 typedef struct {
   int x, y, w, h;
 } PlayerButtons;
+
+const char *get_home();
 
 void get_song(char *buf, int bufsz);
 

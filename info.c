@@ -114,7 +114,9 @@ void task(const char *path, int title, int body, char *buft, int bufszt,
           char *bufb, int bufszb, int *pct) {
   FILE *f = fopen(path, "r");
   if (!f) {
-    perror("fopen");
+    snprintf(buft, bufszt, "No task yet");
+    snprintf(bufb, bufszb, "Use --new-task");
+    *pct = 0;
     return;
   }
   char linea[256];
@@ -140,6 +142,6 @@ void task(const char *path, int title, int body, char *buft, int bufszt,
 
   *pct = atoi(cl) ? 100 : 0;
 
-  snprintf(buft, bufszt, "Task-%s", lt);
+  snprintf(buft, bufszt, "task: %s", lt);
   snprintf(bufb, bufszb, "%s", lb);
 }
