@@ -1,4 +1,5 @@
 #include "player.h"
+#include <stdio.h>
 
 const char *get_home() {
   const char *home = getenv("HOME");
@@ -103,19 +104,19 @@ void draw_cover(Display *dpy, Window win, int x, int y, int size,
   if (!art_url || strlen(art_url) == 0)
     return;
 
-  const char *filepath;
-  char tmp[256];
+  char filepath[256];
 
   if (strncmp(art_url, "https://", 8) == 0 ||
       strncmp(art_url, "http://", 7) == 0) {
     download_cover(art_url);
-    filepath = "/tmp/cover.jpg";
+    snprintf(filepath, sizeof(filepath), "%s/.cache/XMenu/covers/cover.jpg",
+             get_home());
   } else if (strncmp(art_url, "file://", 7) == 0) {
-    strncpy(tmp, art_url + 7, sizeof(tmp) - 1);
-    tmp[sizeof(tmp) - 1] = '\0';
-    filepath = tmp;
+    strncpy(filepath, art_url + 7, sizeof(filepath) - 1);
+    filepath[sizeof(filepath) - 1] = '\0';
   } else {
-    filepath = art_url;
+    strncpy(filepath, art_url, sizeof(filepath) - 1);
+    filepath[sizeof(filepath) - 1] = '\0';
   }
 
   imlib_context_set_display(dpy);
@@ -147,7 +148,7 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
                  unsigned long background, XftColor *value_color, int x, int y,
                  int w, int h, char *last_art_url, PlayerButtons *btns,
                  Visual *visual, Colormap cmap) {
-  char song[256], time_act[256], art_url[256];
+  char song[34], time_act[256], art_url[256];
   get_song(song, sizeof(song));
   get_time(time_act, sizeof(time_act));
   get_art_url(art_url, sizeof(art_url));
@@ -172,7 +173,7 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   XftDrawStringUtf8(xdraw, title_color, font, text_x, y + 20,
                     (FcChar8 *)"Listening", strlen("Listening"));
   XftDrawStringUtf8(xdraw, value_color, font, text_x + 70, y + 50,
-                    (FcChar8 *)song, strlen(song) - 4);
+                    (FcChar8 *)song, strlen(song));
   XftDrawStringUtf8(xdraw, value_color, font, text_x + 70, y + 80,
                     (FcChar8 *)time_act, strlen(time_act));
 
