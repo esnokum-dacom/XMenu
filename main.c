@@ -33,7 +33,57 @@ int main(int argc, char *argv[]) {
     printf("Task created.\n");
     return 0;
 
-  } else if (argc >= 2 && strcmp(argv[1], "--fetch") == 0) {
+  } else if (argc >= 2 && strcmp(argv[1], "--task-complete") == 0) {
+    if (argc < 3) {
+      printf("Use: XMenu --task-complete <0|1>\n");
+      return 1;
+    }
+    if (strcmp(argv[2], "0") != 0 && strcmp(argv[2], "1") != 0) {
+      printf("Error: only 0 or 1 allowed.\n");
+      return 1;
+    }
+    char dir[128];
+    snprintf(dir, sizeof(dir), "%s/.cache/XMenu", get_home());
+    char flp[256];
+    snprintf(flp, sizeof(flp), "%s/task.txt", dir);
+
+    FILE *fp = fopen(flp, "r");
+    if (fp == NULL) {
+      printf("Error handling file.\n");
+      return 1;
+    }
+    char lines[16][256];
+    int count = 0;
+    while (count < 16 && fgets(lines[count], sizeof(lines[count]), fp))
+      count++;
+    fclose(fp);
+
+    if (count < 3) {
+      fp = fopen(flp, "a");
+      if (fp == NULL) {
+        printf("Error handling file.\n");
+        return 1;
+      }
+      fprintf(fp, "%s\n", argv[2]);
+      fclose(fp);
+    } else {
+      snprintf(lines[2], sizeof(lines[2]), "%s\n", argv[2]);
+      fp = fopen(flp, "w");
+      if (fp == NULL) {
+        printf("Error handling file.\n");
+        return 1;
+      }
+      for (int i = 0; i < count; i++)
+        fputs(lines[i], fp);
+      fclose(fp);
+    }
+
+    printf("Task marked as %s.\n",
+           strcmp(argv[2], "1") == 0 ? "complete" : "incomplete");
+    return 0;
+  }
+
+  else if (argc >= 2 && strcmp(argv[1], "--fetch") == 0) {
     Display *dpy = XOpenDisplay(NULL);
     if (!dpy) {
       fprintf(stderr, "It could not be open the display\n");
