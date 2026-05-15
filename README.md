@@ -19,8 +19,7 @@ You can create a task
 ```bash
 XMenu --new-task <Title task> <Short body task>
 ```
-<img width="535" height="203" alt="image" src="https://github.com/user-attachments/assets/6d45ef74-dfd5-4c57-8397-c6c59e198092" />
-
+<img width="538" height="221" alt="image" src="https://github.com/user-attachments/assets/3a69b2b7-7800-4346-857f-912400614121" />
 
 Also, you can mark it as complete or not with
 
