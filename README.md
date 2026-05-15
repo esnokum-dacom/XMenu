@@ -12,3 +12,30 @@
 ```bash
 sudo pacman -S libx11 libxinerama libxft fontconfig imlib2 playerctl curl
 ```
+# Tasks
+
+You can create a task
+
+```bash
+XMenu --new-task <Title task> <Short body task>
+```
+<img width="423" height="182" alt="image" src="https://github.com/user-attachments/assets/0f8533d3-9c17-47be-95f4-6060179ce4cf" />
+
+Also, you can mark it as complete or not with
+
+```bash
+XMenu --task-complete <1|0>
+```
+<img width="517" height="283" alt="image" src="https://github.com/user-attachments/assets/8da0fb67-a0cb-45d8-9f6b-67fd92caf6e5" />
+
+
+0 means not completed, and 1 means completed
+
+# Fetch
+
+With this command, you can see your distro, user, hostname, ram, etc. In the app, like neofetch but in C with X11.
+
+```bash
+XMenu --fetch
+```
+<img width="548" height="345" alt="image" src="https://github.com/user-attachments/assets/b291ffbd-d477-468e-a718-496a67b4975e" />
