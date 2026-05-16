@@ -9,6 +9,53 @@
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
+  Display *dpy = XOpenDisplay(NULL);
+
+  int screen = DefaultScreen(dpy);
+  Window root = DefaultRootWindow(dpy);
+  Visual *visual = DefaultVisual(dpy, screen);
+  Colormap cmap = DefaultColormap(dpy, screen);
+  XftFont *font = XftFontOpenName(dpy, screen, "monospace:size=12");
+
+  int mx = 0, my = 0, mw = DisplayWidth(dpy, screen),
+      mh = DisplayHeight(dpy, screen);
+  if (XineramaIsActive(dpy)) {
+    int n;
+    XineramaScreenInfo *info = XineramaQueryScreens(dpy, &n);
+    Window dummy_w;
+    int dummy_i;
+    unsigned int dummy_u;
+    int cx, cy;
+    XQueryPointer(dpy, root, &dummy_w, &dummy_w, &cx, &cy, &dummy_i, &dummy_i,
+                  &dummy_u);
+    for (int i = 0; i < n; i++) {
+      if (cx >= info[i].x_org && cx < info[i].x_org + info[i].width &&
+          cy >= info[i].y_org && cy < info[i].y_org + info[i].height) {
+        mx = info[i].x_org;
+        my = info[i].y_org;
+        mw = info[i].width;
+        mh = info[i].height;
+        break;
+      }
+    }
+    XFree(info);
+  }
+
+  XSetWindowAttributes attrs = {
+      .override_redirect = True,
+      .background_pixel = 0x151515,
+      .event_mask =
+          ExposureMask | ButtonPressMask | PointerMotionMask | LeaveWindowMask,
+  };
+  int win_w = 550;
+  int win_h = 350;
+  int win_x = mx + (mw - win_w) / 2;
+  int win_y = my + (mh - win_h) / 2;
+
+  Window win = XCreateWindow(
+      dpy, root, win_x, win_y, win_w, win_h, 0, CopyFromParent, InputOutput,
+      CopyFromParent, CWOverrideRedirect | CWBackPixel | CWEventMask, &attrs);
+
   if (argc >= 2 && strcmp(argv[1], "--new-task") == 0) {
     if (argc < 4) {
       printf("Use: XMenu --new-task <name-task> <task-body>\n");
@@ -84,56 +131,10 @@ int main(int argc, char *argv[]) {
   }
 
   else if (argc >= 2 && strcmp(argv[1], "--fetch") == 0) {
-    Display *dpy = XOpenDisplay(NULL);
     if (!dpy) {
       fprintf(stderr, "It could not be open the display\n");
       return 1;
     }
-
-    int screen = DefaultScreen(dpy);
-    Window root = DefaultRootWindow(dpy);
-    Visual *visual = DefaultVisual(dpy, screen);
-    Colormap cmap = DefaultColormap(dpy, screen);
-    XftFont *font = XftFontOpenName(dpy, screen, "monospace:size=12");
-
-    int mx = 0, my = 0, mw = DisplayWidth(dpy, screen),
-        mh = DisplayHeight(dpy, screen);
-    if (XineramaIsActive(dpy)) {
-      int n;
-      XineramaScreenInfo *info = XineramaQueryScreens(dpy, &n);
-      Window dummy_w;
-      int dummy_i;
-      unsigned int dummy_u;
-      int cx, cy;
-      XQueryPointer(dpy, root, &dummy_w, &dummy_w, &cx, &cy, &dummy_i, &dummy_i,
-                    &dummy_u);
-      for (int i = 0; i < n; i++) {
-        if (cx >= info[i].x_org && cx < info[i].x_org + info[i].width &&
-            cy >= info[i].y_org && cy < info[i].y_org + info[i].height) {
-          mx = info[i].x_org;
-          my = info[i].y_org;
-          mw = info[i].width;
-          mh = info[i].height;
-          break;
-        }
-      }
-      XFree(info);
-    }
-
-    XSetWindowAttributes attrs = {
-        .override_redirect = True,
-        .background_pixel = 0x151515,
-        .event_mask = ExposureMask | ButtonPressMask | PointerMotionMask |
-                      LeaveWindowMask,
-    };
-    int win_w = 550;
-    int win_h = 350;
-    int win_x = mx + (mw - win_w) / 2;
-    int win_y = my + (mh - win_h) / 2;
-
-    Window win = XCreateWindow(
-        dpy, root, win_x, win_y, win_w, win_h, 0, CopyFromParent, InputOutput,
-        CopyFromParent, CWOverrideRedirect | CWBackPixel | CWEventMask, &attrs);
 
     XMapRaised(dpy, win);
     XSetInputFocus(dpy, win, RevertToParent, CurrentTime);
@@ -245,56 +246,10 @@ int main(int argc, char *argv[]) {
   }
 
   else {
-    Display *dpy = XOpenDisplay(NULL);
     if (!dpy) {
       fprintf(stderr, "It could not be open the display\n");
       return 1;
     }
-
-    int screen = DefaultScreen(dpy);
-    Window root = DefaultRootWindow(dpy);
-    Visual *visual = DefaultVisual(dpy, screen);
-    Colormap cmap = DefaultColormap(dpy, screen);
-    XftFont *font = XftFontOpenName(dpy, screen, "monospace:size=12");
-
-    int mx = 0, my = 0, mw = DisplayWidth(dpy, screen),
-        mh = DisplayHeight(dpy, screen);
-    if (XineramaIsActive(dpy)) {
-      int n;
-      XineramaScreenInfo *info = XineramaQueryScreens(dpy, &n);
-      Window dummy_w;
-      int dummy_i;
-      unsigned int dummy_u;
-      int cx, cy;
-      XQueryPointer(dpy, root, &dummy_w, &dummy_w, &cx, &cy, &dummy_i, &dummy_i,
-                    &dummy_u);
-      for (int i = 0; i < n; i++) {
-        if (cx >= info[i].x_org && cx < info[i].x_org + info[i].width &&
-            cy >= info[i].y_org && cy < info[i].y_org + info[i].height) {
-          mx = info[i].x_org;
-          my = info[i].y_org;
-          mw = info[i].width;
-          mh = info[i].height;
-          break;
-        }
-      }
-      XFree(info);
-    }
-
-    XSetWindowAttributes attrs = {
-        .override_redirect = True,
-        .background_pixel = 0x151515,
-        .event_mask = ExposureMask | ButtonPressMask | PointerMotionMask |
-                      LeaveWindowMask,
-    };
-    int win_w = 550;
-    int win_h = 350;
-    int win_x = mx + (mw - win_w) / 2;
-    int win_y = my + (mh - win_h) / 2;
-
-    Window win = XCreateWindow(
-        dpy, root, win_x, win_y, win_w, win_h, 0, CopyFromParent, InputOutput,
-        CopyFromParent, CWOverrideRedirect | CWBackPixel | CWEventMask, &attrs);
 
     XMapRaised(dpy, win);
     XSetInputFocus(dpy, win, RevertToParent, CurrentTime);
