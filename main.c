@@ -21,7 +21,7 @@ static int wait_event(Display *dpy) {
   return select(fd + 1, &fds, NULL, NULL, &tv) > 0;
 }
 
-static Window create_win(Display *dpy, int win_w, int win_h) {
+Window create_win(Display *dpy, int win_w, int win_h) {
   int screen = DefaultScreen(dpy);
   Window root = DefaultRootWindow(dpy);
   int mx = 0, my = 0;
@@ -146,8 +146,12 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
   XEvent ev = {0};
 
   int running = 1;
+  int first = 1;
+
   while (running) {
-    wait_event(dpy);
+    if (!first)
+      wait_event(dpy);
+    first = 0;
 
     while (XPending(dpy)) {
       XNextEvent(dpy, &ev);
@@ -237,8 +241,11 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
   snprintf(task_dir, sizeof(task_dir), "%s/.cache/XMenu/task.txt", get_home());
 
   int running = 1;
+  int first = 1;
   while (running) {
-    wait_event(dpy);
+    if (!first)
+      wait_event(dpy);
+    first = 0;
 
     while (XPending(dpy)) {
       XNextEvent(dpy, &ev);
@@ -246,7 +253,7 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
         int cx = ev.xbutton.x, cy = ev.xbutton.y;
         if (cx >= btns.x && cx <= btns.x + btns.w && cy >= btns.y &&
             cy <= btns.y + btns.h)
-          system("playerctl -i chromium,firefox play-pause");
+          system("playerctl -i chromium,firefox,brave play-pause");
       }
       if (ev.type == LeaveNotify && ev.xcrossing.mode == NotifyNormal &&
           ev.xcrossing.detail != NotifyInferior)
