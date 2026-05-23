@@ -76,7 +76,6 @@ int count_wrapped_lines(Display *dpy, XftFont *font, int max_width,
       word[i++] = *p++;
 
     word[i] = '\0';
-
     if (strlen(line) == 0)
       snprintf(test, sizeof(test), "%s", word);
     else

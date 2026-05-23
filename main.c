@@ -190,16 +190,16 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
     XFillRectangle(dpy, buf, gc, 10, 10, win_w - 20, win_h - 20);
 
     draw_cover(dpy, buf, (win_w - 150) - 50, (win_h - 150) - 50, 150, path);
-    draw_text(dpy, xdraw, font, &color, 10, 10, host, 0);
-    draw_text(dpy, xdraw, font, &color, 10, 28, "--------------", 0);
-    draw_text(dpy, xdraw, font, &color, 10, 45, "Memory: ", 0);
-    draw_text(dpy, xdraw, font, &color, 90, 45, ram_text, 0);
-    draw_text(dpy, xdraw, font, &color, 10, 70, "OS: ", 0);
-    draw_text(dpy, xdraw, font, &color, 90, 70, os_text, 0);
-    draw_text(dpy, xdraw, font, &color, 10, 95, "Kernel: ", 0);
-    draw_text(dpy, xdraw, font, &color, 90, 95, kernel_text, 0);
-    draw_text(dpy, xdraw, font, &color, 10, 120, "Shell: ", 0);
-    draw_text(dpy, xdraw, font, &color, 90, 120, shell_text, 0);
+    draw_text(dpy, xdraw, font, &color, 20, 30, host, 0);
+    draw_text(dpy, xdraw, font, &color, 20, 48, "--------------", 0);
+    draw_text(dpy, xdraw, font, &color, 20, 65, "Memory: ", 0);
+    draw_text(dpy, xdraw, font, &color, 100, 65, ram_text, 0);
+    draw_text(dpy, xdraw, font, &color, 20, 90, "OS: ", 0);
+    draw_text(dpy, xdraw, font, &color, 100, 90, os_text, 0);
+    draw_text(dpy, xdraw, font, &color, 20, 115, "Kernel: ", 0);
+    draw_text(dpy, xdraw, font, &color, 100, 115, kernel_text, 0);
+    draw_text(dpy, xdraw, font, &color, 20, 140, "Shell: ", 0);
+    draw_text(dpy, xdraw, font, &color, 100, 140, shell_text, 0);
 
     XCopyArea(dpy, buf, win, gc, 0, 0, win_w, win_h, 0, 0);
     XFlush(dpy);
