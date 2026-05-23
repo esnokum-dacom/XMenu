@@ -4,6 +4,7 @@
 #include "player.h"
 #include <X11/X.h>
 #include <X11/Xft/Xft.h>
+#include <X11/extensions/Xrender.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -189,16 +190,16 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
     XFillRectangle(dpy, buf, gc, 10, 10, win_w - 20, win_h - 20);
 
     draw_cover(dpy, buf, (win_w - 150) - 50, (win_h - 150) - 50, 150, path);
-    draw_text(xdraw, font, &color, 10, 10, host);
-    draw_text(xdraw, font, &color, 10, 28, "--------------");
-    draw_text(xdraw, font, &color, 10, 45, "Memory: ");
-    draw_text(xdraw, font, &color, 90, 45, ram_text);
-    draw_text(xdraw, font, &color, 10, 70, "OS: ");
-    draw_text(xdraw, font, &color, 90, 70, os_text);
-    draw_text(xdraw, font, &color, 10, 95, "Kernel: ");
-    draw_text(xdraw, font, &color, 90, 95, kernel_text);
-    draw_text(xdraw, font, &color, 10, 120, "Shell: ");
-    draw_text(xdraw, font, &color, 90, 120, shell_text);
+    draw_text(dpy, xdraw, font, &color, 10, 10, host, 0);
+    draw_text(dpy, xdraw, font, &color, 10, 28, "--------------", 0);
+    draw_text(dpy, xdraw, font, &color, 10, 45, "Memory: ", 0);
+    draw_text(dpy, xdraw, font, &color, 90, 45, ram_text, 0);
+    draw_text(dpy, xdraw, font, &color, 10, 70, "OS: ", 0);
+    draw_text(dpy, xdraw, font, &color, 90, 70, os_text, 0);
+    draw_text(dpy, xdraw, font, &color, 10, 95, "Kernel: ", 0);
+    draw_text(dpy, xdraw, font, &color, 90, 95, kernel_text, 0);
+    draw_text(dpy, xdraw, font, &color, 10, 120, "Shell: ", 0);
+    draw_text(dpy, xdraw, font, &color, 90, 120, shell_text, 0);
 
     XCopyArea(dpy, buf, win, gc, 0, 0, win_w, win_h, 0, 0);
     XFlush(dpy);
@@ -231,7 +232,7 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
   XftColorAllocName(dpy, vis, cmap, "#ffffff", &value_color);
 
   char ram_text[64], bat_cap[32], hour[64], date_str[64];
-  char user[32], t_title[16], t_body[16], song[32];
+  char user[32], t_title[2048], t_body[2048], song[32], test[16];
   char task_dir[256];
   char last_art_url[256] = {0};
   PlayerButtons btns = {0};
@@ -239,6 +240,7 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
 
   int ram_pct, batt_pct, task_pct;
   snprintf(task_dir, sizeof(task_dir), "%s/.cache/XMenu/task.txt", get_home());
+  snprintf(test, sizeof(test), "Hello world");
 
   int running = 1;
   int first = 1;
@@ -271,6 +273,9 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
     task(task_dir, 1, 2, t_title, sizeof(t_title), t_body, sizeof(t_body),
          &task_pct);
 
+    int line_h = font->ascent + font->descent + 2;
+    int padding = 20;
+
     XSetForeground(dpy, gc, 0x151515);
     XFillRectangle(dpy, buf, gc, 0, 0, win_w, win_h);
 
@@ -283,16 +288,16 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
                 &value_color, 10, 130, win_w / 1.04, 120, last_art_url, &btns,
                 vis, cmap);
     draw_card(dpy, buf, gc, xdraw, font, &title_color, 0x000000, 0xffffff,
-              &value_color, 10, 260, win_w / 2.3, 70, t_title, t_body,
-              task_pct);
+              &value_color, 10, 260 + line_h + padding, win_w - 20, 95, t_title,
+              t_body, task_pct);
 
     XSetForeground(dpy, gc, 0x000000);
     XFillRectangle(dpy, buf, gc, 10, 10, win_w - 20, 30);
-    draw_text(xdraw, font, &title_color, 10, 10, hour);
-    draw_text(xdraw, font, &title_color,
-              (win_w / 2) - (int)strlen(date_str) * 7, 10, date_str);
-    draw_text(xdraw, font, &title_color, (win_w - 30) - (int)strlen(user) * 7,
-              10, user);
+    draw_text(dpy, xdraw, font, &title_color, 20, 31, hour, 0);
+    draw_text(dpy, xdraw, font, &title_color, (win_w / 2) + 30, 31, date_str,
+              1);
+
+    draw_text(dpy, xdraw, font, &title_color, win_w - 20, 31, user, 1);
 
     XCopyArea(dpy, buf, win, gc, 0, 0, win_w, win_h, 0, 0);
     XFlush(dpy);
@@ -319,7 +324,7 @@ int main(int argc, char *argv[]) {
   if (argc >= 2 && strcmp(argv[1], "--task-complete") == 0)
     return cmd_task_complete(argc, argv);
 
-  int win_w = 550, win_h = 350;
+  int win_w = 550, win_h = 450;
   Window win = create_win(dpy, win_w, win_h);
 
   int ret;

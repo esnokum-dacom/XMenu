@@ -1,4 +1,5 @@
 #include "player.h"
+#include "draw.h"
 #include <stdio.h>
 
 const char *get_home() {
@@ -35,8 +36,7 @@ static void download_cover(const char *url) {
 }
 
 static void get_art_url(char *buf, int bufsz) {
-  FILE *f =
-      popen("playerctl -i chromium,firefox,brave metadata mpris:artUrl", "r");
+  FILE *f = popen("playerctl -i chromium,firefox metadata mpris:artUrl", "r");
   if (!f) {
     buf[0] = '\0';
     return;
@@ -49,10 +49,9 @@ static void get_art_url(char *buf, int bufsz) {
 }
 
 void get_song(char *buf, int bufsz) {
-  FILE *f =
-      popen("playerctl -i chromium,firefox,brave metadata --format '{{artist}} "
-            "- {{title}}'",
-            "r");
+  FILE *f = popen("playerctl -i chromium,firefox metadata --format '{{artist}} "
+                  "- {{title}}'",
+                  "r");
   if (!f) {
     snprintf(buf, bufsz, "N/A");
     return;
@@ -68,7 +67,7 @@ void get_song(char *buf, int bufsz) {
 }
 
 void get_time(char *buf, int bufsz) {
-  FILE *f = popen("playerctl -i chromium,firefox,brave metadata --format "
+  FILE *f = popen("playerctl -i chromium,firefox metadata --format "
                   "'{{duration(position)}} - {{duration(mpris:length)}} '",
                   "r");
   if (!f) {
@@ -86,7 +85,7 @@ void get_time(char *buf, int bufsz) {
 }
 
 static int get_progress_pct(void) {
-  FILE *f = popen("playerctl -i chromium,firefox,brave metadata --format "
+  FILE *f = popen("playerctl -i chromium,firefox metadata --format "
                   "'{{position}} {{mpris:length}}'",
                   "r");
   if (!f)
@@ -134,7 +133,7 @@ void draw_cover(Display *dpy, Window win, int x, int y, int size,
 }
 
 static int is_playing(void) {
-  FILE *f = popen("playerctl -i chromium,firefox,brave status", "r");
+  FILE *f = popen("playerctl -i chromium,firefox status", "r");
   if (!f)
     return 0;
   char status[32];
@@ -148,15 +147,23 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
                  unsigned long background, XftColor *value_color, int x, int y,
                  int w, int h, char *last_art_url, PlayerButtons *btns,
                  Visual *visual, Colormap cmap) {
-  char song[34], time_act[256], art_url[256];
+
+  char song[256], time_act[256], art_url[256];
+
   get_song(song, sizeof(song));
   get_time(time_act, sizeof(time_act));
   get_art_url(art_url, sizeof(art_url));
 
+  int line_h = font->ascent + font->descent + 2;
+  int n_song = count_wrapped_lines(dpy, font, w - 20, song);
+  int padding = 20;
+
+  h = h + line_h + padding;
+
   XSetForeground(dpy, gc, foreground);
   XFillRectangle(dpy, win, gc, x, y, w, h);
 
-  int cover_size = h - 20;
+  int cover_size = (h - 20) / 1.2;
 
   if (strcmp(art_url, last_art_url) != 0) {
     strncpy(last_art_url, art_url, 255);
@@ -172,13 +179,20 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   int text_x = x + 10 + cover_size + 10;
   XftDrawStringUtf8(xdraw, title_color, font, text_x, y + 20,
                     (FcChar8 *)"Listening", strlen("Listening"));
-  XftDrawStringUtf8(xdraw, value_color, font, text_x + 70, y + 50,
-                    (FcChar8 *)song, strlen(song));
-  XftDrawStringUtf8(xdraw, value_color, font, text_x + 70, y + 80,
+  // XftDrawStringUtf8(xdraw, value_color, font, text_x + 70, y + 50,
+  //                  (FcChar8 *)song, strlen(song));
+
+  char buf[1024];
+  snprintf(buf, sizeof(buf), "%s", song);
+  int ty = y + 50;
+  draw_wrapped_text(dpy, xdraw, font, title_color, text_x + 70, ty, w - 220,
+                    buf);
+
+  XftDrawStringUtf8(xdraw, value_color, font, w / 2 + 50, y + 20,
                     (FcChar8 *)time_act, strlen(time_act));
 
   int btn_x = text_x;
-  int btn_y = y + h - 90;
+  int btn_y = y + 38;
   int btn_w = 60;
   int btn_h = 60;
 
@@ -208,8 +222,8 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
     btns->h = btn_h;
   }
 
-  int bar_x = text_x;
-  int bar_w = w - cover_size - 40;
+  int bar_x = x + 10;
+  int bar_w = w - 20;
   int bar_h = 6;
   int bar_y = y + h - 20;
   int pct = get_progress_pct();
