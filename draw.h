@@ -6,8 +6,22 @@
 #include <X11/Xlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+typedef struct {
+  unsigned long colors[16];
+  unsigned long background;
+  unsigned long foreground;
+} ColorScheme;
+
+unsigned long hex_to_xcolor(Display *dpy, const char *hex);
+
+void load_colors(Display *dpy, ColorScheme *col);
+
+void xcolor_to_xftcolor(Display *dpy, Visual *vis, Colormap cmap,
+                        unsigned long pixel, XftColor *xft);
 
 void draw_wrapped_text(Display *dpy, XftDraw *xdraw, XftFont *font,
                        XftColor *color, int x, int y, int max_width,

@@ -1,6 +1,6 @@
 CC      = gcc
 TARGET  = XMenu 
-SRCS    = main.c info.c player.c draw.c
+SRCS    = main.c info.c player.c draw.c src/modules/sigr1.c
 LIBS    = -lX11 -lXinerama -lImlib2 -lfontconfig $(shell pkg-config --cflags --libs xft)
 CFLAGS  = -Wall -Wextra -DASSETS_DIR=\"$(HOME)/.cache/XMenu/src\"
 BINDIR  = $(HOME)/.local/bin

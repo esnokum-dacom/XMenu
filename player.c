@@ -1,5 +1,6 @@
 #include "player.h"
 #include "draw.h"
+#include "src/modules/sigr1.h"
 #include <stdio.h>
 
 const char *get_home() {
@@ -148,6 +149,11 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
                  int w, int h, char *last_art_url, PlayerButtons *btns,
                  Visual *visual, Colormap cmap) {
 
+  ColorScheme col = {0};
+
+  load_colors(dpy, &col);
+  signal(SIGUSR1, handle_sigusr1);
+
   char song[256], time_act[256], art_url[256];
 
   get_song(song, sizeof(song));
@@ -196,7 +202,7 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   int btn_w = 60;
   int btn_h = 60;
 
-  unsigned long color = is_playing() ? 0x303030 : 0xffffff;
+  unsigned long color = is_playing() ? col.colors[10] : col.colors[15];
   XSetForeground(dpy, gc, color);
   XFillRectangle(dpy, win, gc, btn_x, btn_y, btn_w, btn_h);
 
@@ -205,10 +211,10 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
 
   if (is_playing()) {
     tm_x = 15;
-    XftColorAllocName(dpy, visual, cmap, "#ffffff", &color_t);
+    xcolor_to_xftcolor(dpy, visual, cmap, col.foreground, &color_t);
   } else {
     tm_x = 10;
-    XftColorAllocName(dpy, visual, cmap, "#000000", &color_t);
+    xcolor_to_xftcolor(dpy, visual, cmap, col.colors[0], &color_t);
   }
 
   const char *label = is_playing() ? " >" : "||";
@@ -228,10 +234,10 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   int bar_y = y + h - 20;
   int pct = get_progress_pct();
 
-  XSetForeground(dpy, gc, 0x303030);
+  XSetForeground(dpy, gc, col.colors[1]);
   XFillRectangle(dpy, win, gc, bar_x, bar_y, bar_w, bar_h);
 
-  XSetForeground(dpy, gc, background);
+  XSetForeground(dpy, gc, col.foreground);
   XFillRectangle(dpy, win, gc, bar_x, bar_y, bar_w * pct / 100, bar_h);
 
   XftColorFree(dpy, visual, cmap, &color_t);

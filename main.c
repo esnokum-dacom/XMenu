@@ -2,6 +2,7 @@
 #include "draw.h"
 #include "info.h"
 #include "player.h"
+#include "src/modules/sigr1.h"
 #include <X11/X.h>
 #include <X11/Xft/Xft.h>
 #include <X11/extensions/Xrender.h>
@@ -128,6 +129,8 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
   Colormap cmap = DefaultColormap(dpy, screen);
   XftFont *font = XftFontOpenName(dpy, screen, "monospace:size=12");
 
+  ColorScheme col = {0};
+
   XMapRaised(dpy, win);
   XSetInputFocus(dpy, win, RevertToParent, CurrentTime);
 
@@ -136,8 +139,10 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
   Pixmap buf = XCreatePixmap(dpy, win, win_w, win_h, DefaultDepth(dpy, screen));
   XftDraw *xdraw = XftDrawCreate(dpy, buf, vis, cmap);
 
+  load_colors(dpy, &col);
+  signal(SIGUSR1, handle_sigusr1);
+
   XftColor color;
-  XftColorAllocName(dpy, vis, cmap, "#ffffff", &color);
 
   char ram_text[64], os_text[64], kernel_text[64];
   char shell_text[64], user[32], hostname[32], host[64];
@@ -163,6 +168,8 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
     if (!running)
       break;
 
+    xcolor_to_xftcolor(dpy, vis, cmap, col.foreground, &color);
+
     get_user(user, sizeof(user));
     get_ram(ram_text, sizeof(ram_text), &ram_pct);
     get_os(os_text, sizeof(os_text));
@@ -184,9 +191,9 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
     snprintf(path, sizeof(path), "%s/.cache/XMenu/src/%s.png", get_home(),
              logo);
 
-    XSetForeground(dpy, gc, 0x151515);
+    XSetForeground(dpy, gc, col.colors[3]);
     XFillRectangle(dpy, buf, gc, 0, 0, win_w, win_h);
-    XSetForeground(dpy, gc, 0x000000);
+    XSetForeground(dpy, gc, col.background);
     XFillRectangle(dpy, buf, gc, 10, 10, win_w - 20, win_h - 20);
 
     draw_cover(dpy, buf, (win_w - 150) - 50, (win_h - 150) - 50, 150, path);
@@ -218,6 +225,7 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
   Visual *vis = DefaultVisual(dpy, screen);
   Colormap cmap = DefaultColormap(dpy, screen);
   XftFont *font = XftFontOpenName(dpy, screen, "monospace:size=12");
+  ColorScheme col = {0};
 
   XMapRaised(dpy, win);
   XSetInputFocus(dpy, win, RevertToParent, CurrentTime);
@@ -227,9 +235,10 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
   Pixmap buf = XCreatePixmap(dpy, win, win_w, win_h, DefaultDepth(dpy, screen));
   XftDraw *xdraw = XftDrawCreate(dpy, buf, vis, cmap);
 
+  load_colors(dpy, &col);
+  signal(SIGUSR1, handle_sigusr1);
+
   XftColor title_color, value_color;
-  XftColorAllocName(dpy, vis, cmap, "#ffffff", &title_color);
-  XftColorAllocName(dpy, vis, cmap, "#ffffff", &value_color);
 
   char ram_text[64], bat_cap[32], hour[64], date_str[64];
   char user[32], t_title[2048], t_body[2048], song[32], test[16];
@@ -255,7 +264,7 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
         int cx = ev.xbutton.x, cy = ev.xbutton.y;
         if (cx >= btns.x && cx <= btns.x + btns.w && cy >= btns.y &&
             cy <= btns.y + btns.h)
-          system("playerctl -i chromium,firefox,brave play-pause");
+          system("playerctl -i chromium,firefox play-pause");
       }
       if (ev.type == LeaveNotify && ev.xcrossing.mode == NotifyNormal &&
           ev.xcrossing.detail != NotifyInferior)
@@ -276,22 +285,26 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
     int line_h = font->ascent + font->descent + 2;
     int padding = 20;
 
-    XSetForeground(dpy, gc, 0x151515);
+    xcolor_to_xftcolor(dpy, vis, cmap, col.foreground, &title_color);
+    xcolor_to_xftcolor(dpy, vis, cmap, col.foreground, &value_color);
+
+    XSetForeground(dpy, gc, col.background);
     XFillRectangle(dpy, buf, gc, 0, 0, win_w, win_h);
 
-    draw_card(dpy, buf, gc, xdraw, font, &title_color, 0x000000, 0xffffff,
-              &value_color, 10, 50, win_w / 2.3, 70, "RAM", ram_text, ram_pct);
-    draw_card(dpy, buf, gc, xdraw, font, &title_color, 0x000000, 0xffffff,
-              &value_color, win_w / 2.1, 50, win_w / 2, 70, "BATTERY", bat_cap,
-              batt_pct);
-    draw_player(dpy, buf, gc, xdraw, font, &title_color, 0x000000, 0xffffff,
-                &value_color, 10, 130, win_w / 1.04, 120, last_art_url, &btns,
-                vis, cmap);
-    draw_card(dpy, buf, gc, xdraw, font, &title_color, 0x000000, 0xffffff,
-              &value_color, 10, 260 + line_h + padding, win_w - 20, 95, t_title,
-              t_body, task_pct);
+    draw_card(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+              col.foreground, &value_color, 10, 50, win_w / 2.3, 70, "RAM",
+              ram_text, ram_pct);
+    draw_card(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+              col.foreground, &value_color, win_w / 2.1, 50, win_w / 2, 70,
+              "BATTERY", bat_cap, batt_pct);
+    draw_player(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+                col.foreground, &value_color, 10, 130, win_w / 1.04, 120,
+                last_art_url, &btns, vis, cmap);
+    draw_card(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+              col.foreground, &value_color, 10, 260 + line_h + padding,
+              win_w - 20, 95, t_title, t_body, task_pct);
 
-    XSetForeground(dpy, gc, 0x000000);
+    XSetForeground(dpy, gc, col.colors[3]);
     XFillRectangle(dpy, buf, gc, 10, 10, win_w - 20, 30);
     draw_text(dpy, xdraw, font, &title_color, 20, 31, hour, 0);
     draw_text(dpy, xdraw, font, &title_color, (win_w / 2) + 30, 31, date_str,
