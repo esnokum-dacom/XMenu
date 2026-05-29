@@ -214,7 +214,7 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
     xcolor_to_xftcolor(dpy, visual, cmap, col.foreground, &color_t);
   } else {
     tm_x = 10;
-    xcolor_to_xftcolor(dpy, visual, cmap, col.colors[0], &color_t);
+    xcolor_to_xftcolor(dpy, visual, cmap, col.colors[2], &color_t);
   }
 
   const char *label = is_playing() ? " >" : "||";
@@ -234,10 +234,10 @@ void draw_player(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   int bar_y = y + h - 20;
   int pct = get_progress_pct();
 
-  XSetForeground(dpy, gc, col.colors[1]);
+  XSetForeground(dpy, gc, col.colors[COLOR_BAR_F]);
   XFillRectangle(dpy, win, gc, bar_x, bar_y, bar_w, bar_h);
 
-  XSetForeground(dpy, gc, col.foreground);
+  XSetForeground(dpy, gc, col.colors[COLOR_BAR_UF]);
   XFillRectangle(dpy, win, gc, bar_x, bar_y, bar_w * pct / 100, bar_h);
 
   XftColorFree(dpy, visual, cmap, &color_t);

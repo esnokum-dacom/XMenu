@@ -27,20 +27,20 @@ void get_battery(char *buf, int bufsz, int *pct) {
     fclose(f);
   }
 
-  const char *estado;
+  const char *state;
   if (strcmp(raw, "Charging") == 0)
-    estado = "Charging";
+    state = "Charging";
   else if (strcmp(raw, "Discharging") == 0)
-    estado = "Discharging";
+    state = "Discharging";
   else if (strcmp(raw, "Full") == 0)
-    estado = "Full";
+    state = "Full";
   else
-    estado = raw;
+    state = raw;
 
-  *pct = cap >= 0 ? cap : 0; /* la batería ya es 0-100 directamente */
+  *pct = cap >= 0 ? cap : 0;
 
   if (cap >= 0)
-    snprintf(buf, bufsz, "%d%% | %s", cap, estado);
+    snprintf(buf, bufsz, "%d%% | %s", cap, state);
   else
     snprintf(buf, bufsz, "N/A");
 }

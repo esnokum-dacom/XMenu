@@ -191,7 +191,7 @@ static int run_fetch(Display *dpy, Window win, int win_w, int win_h) {
     snprintf(path, sizeof(path), "%s/.cache/XMenu/src/%s.png", get_home(),
              logo);
 
-    XSetForeground(dpy, gc, col.colors[3]);
+    XSetForeground(dpy, gc, col.colors[1]);
     XFillRectangle(dpy, buf, gc, 0, 0, win_w, win_h);
     XSetForeground(dpy, gc, col.background);
     XFillRectangle(dpy, buf, gc, 10, 10, win_w - 20, win_h - 20);
@@ -251,6 +251,8 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
   snprintf(task_dir, sizeof(task_dir), "%s/.cache/XMenu/task.txt", get_home());
   snprintf(test, sizeof(test), "Hello world");
 
+  int color_block = col.colors[COLOR_BLOCK];
+
   int running = 1;
   int first = 1;
   while (running) {
@@ -291,21 +293,21 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
     XSetForeground(dpy, gc, col.background);
     XFillRectangle(dpy, buf, gc, 0, 0, win_w, win_h);
 
-    draw_card(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+    draw_card(dpy, buf, gc, xdraw, font, &title_color, color_block,
               col.foreground, &value_color, 10, 50, win_w / 2.3, 70, "RAM",
               ram_text, ram_pct);
-    draw_card(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+    draw_card(dpy, buf, gc, xdraw, font, &title_color, color_block,
               col.foreground, &value_color, win_w / 2.1, 50, win_w / 2, 70,
               "BATTERY", bat_cap, batt_pct);
-    draw_player(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+    draw_player(dpy, buf, gc, xdraw, font, &title_color, color_block,
                 col.foreground, &value_color, 10, 130, win_w / 1.04, 120,
                 last_art_url, &btns, vis, cmap);
-    draw_card(dpy, buf, gc, xdraw, font, &title_color, col.colors[3],
+    draw_card(dpy, buf, gc, xdraw, font, &title_color, color_block,
               col.foreground, &value_color, 10, 260 + line_h + padding,
               win_w - 20, 95, t_title, t_body, task_pct);
 
-    XSetForeground(dpy, gc, col.colors[3]);
-    XFillRectangle(dpy, buf, gc, 10, 10, win_w - 20, 30);
+    XSetForeground(dpy, gc, color_block);
+    XFillRectangle(dpy, buf, gc, 10, 10, win_w - 23, 30);
     draw_text(dpy, xdraw, font, &title_color, 20, 31, hour, 0);
     draw_text(dpy, xdraw, font, &title_color, (win_w / 2) + 30, 31, date_str,
               1);
@@ -325,7 +327,8 @@ static int run_default(Display *dpy, Window win, int win_w, int win_h) {
   return 0;
 }
 
-int main(int argc, char *argv[]) {
+int 
+main(int argc, char *argv[]) {
   Display *dpy = XOpenDisplay(NULL);
   if (!dpy) {
     fprintf(stderr, "Could not open display\n");

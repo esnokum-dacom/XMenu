@@ -10,6 +10,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#define COLOR_BLOCK 1
+#define COLOR_BAR_UF 5
+#define COLOR_BAR_F 0
+
 typedef struct {
   unsigned long colors[16];
   unsigned long background;

@@ -161,7 +161,6 @@ void draw_card(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   int title_lines = count_wrapped_lines(dpy, font, w - 20, title);
   int value_lines = count_wrapped_lines(dpy, font, w - 20, value);
   int padding = 20;
-
   ColorScheme col = {0};
 
   load_colors(dpy, &col);
@@ -177,11 +176,11 @@ void draw_card(Display *dpy, Window win, GC gc, XftDraw *xdraw, XftFont *font,
   int bar_x = x + 10;
   int bar_w = w - 20;
 
-  XSetForeground(dpy, gc, col.colors[1]);
+  XSetForeground(dpy, gc, col.colors[COLOR_BAR_F]);
   XFillRectangle(dpy, win, gc, bar_x, bar_y, bar_w, bar_h);
 
   int fill_w = bar_w * pct / 100;
-  XSetForeground(dpy, gc, col.foreground);
+  XSetForeground(dpy, gc, col.colors[COLOR_BAR_UF]);
   XFillRectangle(dpy, win, gc, bar_x, bar_y, fill_w, bar_h);
 
   char buf[1024];
